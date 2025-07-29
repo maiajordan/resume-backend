@@ -8,71 +8,52 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
-
-env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'  # Ensure this matches the actual path
-  PYTHON_VERSION: '3.12'
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python version
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: '3.11'
 
-      - name: Create and activate virtual environment, install dependencies
+      - name: Install dependencies
         run: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install --upgrade pip
-          pip install -r ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/requirements.txt
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Zip artifact for deployment
+      - name: Lint or test (optional)
         run: |
-          cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          zip -r ../release.zip .
+          echo "Run linting or testing here if needed"
+          # e.g., flake8 . or pytest
 
-      - name: Upload artifact for deployment job
+      - name: Prepare Azure Function artifact
+        run: |
+          mkdir -p artifact
+          cp -r update_visit_count function_app.py host.json requirements.txt artifact/
+
+      - name: Upload Azure Function artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: release.zip
+          path: artifact/
+          if-no-files-found: error
 
   deploy:
-    runs-on: ubuntu-latest
     needs: build
-    permissions:
-      id-token: write
-      contents: read
-
+    runs-on: ubuntu-latest
     steps:
-      - name: Download artifact from build job
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: python-app
 
-      - name: Unzip artifact for deployment
-        run: unzip release.zip     
-
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A4A33E21E39D4720802173D087903CEF }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_A05B3436DE904F3EBCBA0FD3D2116B05 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_AD3DB17F9B6843438D715DB66077D2E5 }}
-
-      - name: Deploy to Azure Functions
-        uses: Azure/functions-action@v1
-        with:
-          app-name: 'mjresume-api'
-          slot-name: 'Production'
-          package: '.'
+      - name: Display contents for debug
+        run: ls -R
