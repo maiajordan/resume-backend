@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: './backend'  # Ensure this matches the actual path
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.'  # Ensure this matches the actual path
   PYTHON_VERSION: '3.12'
 
 jobs:
