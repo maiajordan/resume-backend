@@ -22,28 +22,19 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
 
       - name: Install dependencies
         run: |
+          cd backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Lint or test (optional)
-        run: |
-          echo "Run linting or testing here if needed"
-          # e.g., flake8 . or pytest
-
-      - name: Prepare Azure Function artifact
-        run: |
-          mkdir -p artifact
-          cp -r update_visit_count function_app.py host.json requirements.txt artifact/
 
       - name: Upload Azure Function artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: artifact/
+          path: backend/
           if-no-files-found: error
 
   deploy:
@@ -54,18 +45,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: python-app
-          path: python-app  # <-- downloads to this directory
+          path: backend  # Download to the same path
 
       - name: List downloaded files (for debugging)
-        run: ls -R python-app
-
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+        run: ls -R backend
 
       - name: Deploy to Azure Function App
         uses: Azure/functions-action@v1
         with:
-          app-name: ${{ secrets.AZURE_FUNCTIONAPP_NAME }}
-          package: python-app  # <-- deploys this directory
+          app-name: mjresume-api
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+          package: backend
+
