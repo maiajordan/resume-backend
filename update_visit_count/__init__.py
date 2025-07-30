@@ -8,7 +8,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     try:
         connection_string = os.getenv("AzureWebJobsStorage")
-        table_name = "VisitorCounter"
+        table_name = "VisitorCount"
 
         # Connect to Azure Table Storage
         service = TableServiceClient.from_connection_string(conn_str=connection_string)
