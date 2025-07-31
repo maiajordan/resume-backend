@@ -29,16 +29,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Prepare artifact (exclude .git and workflows)
-        run: |
-          mkdir artifact
-          rsync -av --exclude='.git*' --exclude='.github' --exclude='*.yml' ./ artifact/
+      # Optional: list files for debugging
+      - name: List project files
+        run: ls -R ./
 
       - name: Upload Azure Function artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: artifact/
+          path: ./
           if-no-files-found: error
 
   deploy:
@@ -49,16 +48,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: python-app
-          path: artifact
+          path: ./
 
       - name: List downloaded files (for debugging)
-        run: ls -R artifact
+        run: ls -R ./
 
       - name: Deploy to Azure Function App
         uses: Azure/functions-action@v1
         with:
           app-name: mjresume-api
           publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
-          package: artifact
+          package: ./
+
 
 
